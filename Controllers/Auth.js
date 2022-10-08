@@ -4,36 +4,46 @@ import { pool } from '../index.js';
 import { genSaltSync, hashSync, compareSync } from 'bcrypt';
 import Jwt from 'jsonwebtoken';
 dotenv.config();
-import { tokenList } from './AuthenticateToken.js';
+// import { tokenList } from './AuthenticateToken.js';
 
 export const login = async(req, res) => {
+  // res.send('hello')
+  console.log(req.body)
   const { email, password } = req.body;
-
   const queryUserExists="SELECT * FROM `user` where `email`=?";
   pool.query(queryUserExists,[email],(err,row,field)=>{
     if(row.length === 0) {
+      console.log('pass is wrong')
       res.status(403).send({ user: 'Password is wrong' });
       return;
     }
-    const xyz = compareSync(password, row[0].pass);
+    const xyz = compareSync(password, row[0].password);
     if (xyz) {
-      let user={username: row[0].fullName,userId: row[0].id}
+      let user={username: row[0].name,userId: row[0].id}
+      console.log(user)
       const token = Jwt.sign(user,process.env.SECRETKEY,{expiresIn: '1d'},(err, token) => {
           if (err) {
             console.log(err);
             res.send(err);
-          } else {
+          }
+          if(token)
+          {
             const refreshToken = Jwt.sign(user, process.env.SECRETKEY, { expiresIn: "2d"})
-            tokenList[refreshToken] = token;
-            res.cookie('token',token,{maxAge:100000000000000});
-            res.cookie('reFreshToken',refreshToken,{maxAge:1000000000000000});
+            // tokenList[refreshToken] = token;
+            // res.cookie('token',token,{maxAge:100000000000000});
+            // res.cookie('reFreshToken',refreshToken,{maxAge:1000000000000000});
+            let data = {
+              msg: 'Logged in!',
+              token: refreshToken,
+              user: row[0],
+            }
 
             res.status(200).send({
               msg: 'Logged in!',
               token: token,
               user: row[0],
             });
-          }
+          } 
         }
       );
     } else {
@@ -43,16 +53,18 @@ export const login = async(req, res) => {
 };
 
 export const SignUp = async (req, res) => { 
-  const { fullName, email } = req.body;
+  const { email, name,password, role } = req.body;
+  console.log(req.body)
   const salt = genSaltSync(10);
-  const password = hashSync(req.body.password, salt); 
+  const encryptedPassword = hashSync(req.body.password, salt); 
 
   const queryUserExists="SELECT * FROM `user` where `email`=?";
-  const insertUser='INSERT INTO user (fullname,email,pass) VALUES (?,?,?)';
+  const insertUser='INSERT INTO user (name,email,password,role) VALUES (?,?,?,?)';
+  console.log(req.body)
 
   pool.query(queryUserExists,[email],(err, row) => {
       if (row.length === 0){
-        pool.query(insertUser,[fullName,email,password],(err,row,field)=>{
+        pool.query(insertUser,[name,email,encryptedPassword,role],(err,row,field)=>{
           if (err) {
             res.status(500).send({
               success: 0,
