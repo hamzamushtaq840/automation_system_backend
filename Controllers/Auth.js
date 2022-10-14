@@ -164,3 +164,16 @@ export const ForgotPasswordChange = (req, res) => {
 export const isAuthorized = (req, res) => {
   res.status(200).send("Authorized");
 };
+
+export const getUser = async (req, res) => {
+  const {userId} = req.params
+  const query = "SELECT * FROM user where id=?";
+  pool.query(query, [userId], (err, row, field) => {
+      if(err)
+      {console.log(err)}
+      if(row)
+      {
+        res.send({data:row})
+        console.log('sent')
+      }})
+}
