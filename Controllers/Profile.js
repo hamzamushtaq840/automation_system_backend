@@ -5,9 +5,9 @@ dotenv.config();
 
 
 export const updateCompanyProfile = async (req, res) => {
-    const { name, description, location, img } = req.body
-    const query = "UPDATE user set name=?,description=?,location=?,img=?";
-    pool.query(query, [name, description, location, img], (err, row, field) => {
+    const { id, name, description, location, img } = req.body
+    const query = "UPDATE user set name=?,description=?,location=?,img=? where id=?";
+    pool.query(query, [name, description, location, img, id], (err, row, field) => {
         if (err) { console.log(err) }
         if (row) { res.status(200).send({ message: 'updated' }) }
     }
